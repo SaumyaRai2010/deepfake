@@ -1,26 +1,28 @@
-import joblib
+import numpy as np
+from tensorflow.keras.models import load_model
 
-from features import extract_features
+from features import preprocess_image
 
-model = joblib.load("model.pkl")
+model = load_model("cnn_model.h5")
 
 
 def predict_image(image_path):
-    features = extract_features(image_path)
+    img = preprocess_image(image_path)
 
-    if features is None:
+    if img is None:
         return "No face detected"
 
-    prediction = model.predict([features])[0]
-    confidence = max(model.predict_proba([features])[0])
+    img = np.expand_dims(img, axis=0)
+    prediction = model.predict(img, verbose=0)[0]
+    confidence = np.max(prediction)
+    predicted_class = np.argmax(prediction)
 
-    if prediction == 1:
+    if predicted_class == 1:
         return f"⚠️ Deepfake Detected | Confidence: {confidence:.2f}"
-    else:
-        return f"✅ Real Image | Confidence: {confidence:.2f}"
+
+    return f"✅ Real Image | Confidence: {confidence:.2f}"
 
 
 # test
 if __name__ == "__main__":
-    result = predict_image("test.jpg")
-    print(result)
+    print(predict_image("test.jpg"))
